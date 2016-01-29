@@ -5,7 +5,7 @@ set -e
 export ETCD_ENDPOINTS=
 
 # Specify the version (vX.Y.Z) of Kubernetes assets to deploy
-export K8S_VER=v1.1.2
+export K8S_VER=v1.1.4
 
 # The CIDR network to use for pod IPs.
 # Each pod launched in the cluster will be assigned an IP out of this range.
@@ -88,14 +88,58 @@ function init_flannel {
 }
 
 function init_templates {
+
+	local TEMPLATE=/opt/bin/kubelet
+	[ -f $TEMPLATE ] || {
+		echo "TEMPLATE: $TEMPLATE"
+		mkdir -p $(dirname $TEMPLATE)
+		# Variable expansion disabled
+		cat > $TEMPLATE << "EOF"
+#!/bin/bash
+# Wrapper for launching kubelet via rkt-fly stage1
+
+set -e
+
+if [ -z "${KUBELET_VERSION}" ]; then
+    echo "ERROR: must set KUBELET_VERSION"
+    exit 1
+fi
+
+KUBELET_ACI="${KUBELET_ACI:-quay.io/aaron_levy/hyperkube}"
+
+mkdir --parents /etc/kubernetes
+mkdir --parents /var/lib/docker
+mkdir --parents /var/lib/kubelet
+mkdir --parents /run/kubelet
+
+exec /usr/bin/rkt run \
+  --volume etc-kubernetes,kind=host,source=/etc/kubernetes \
+  --volume etc-ssl-certs,kind=host,source=/usr/share/ca-certificates \
+  --volume var-lib-docker,kind=host,source=/var/lib/docker \
+  --volume var-lib-kubelet,kind=host,source=/var/lib/kubelet \
+  --volume run,kind=host,source=/run \
+  --mount volume=etc-kubernetes,target=/etc/kubernetes \
+  --mount volume=etc-ssl-certs,target=/etc/ssl/certs \
+  --mount volume=var-lib-docker,target=/var/lib/docker \
+  --mount volume=var-lib-kubelet,target=/var/lib/kubelet \
+  --mount volume=run,target=/run \
+  --trust-keys-from-https \
+  $RKT_OPTS \
+  --stage1-path=/usr/share/rkt/stage1-fly.aci \
+  ${KUBELET_ACI}:${KUBELET_VERSION} --exec=/kubelet -- "$@"
+EOF
+chmod +x /opt/bin/kubelet
+	}
+
+
 	local TEMPLATE=/etc/systemd/system/kubelet.service
 	[ -f $TEMPLATE ] || {
 		echo "TEMPLATE: $TEMPLATE"
 		mkdir -p $(dirname $TEMPLATE)
 		cat << EOF > $TEMPLATE
 [Service]
-ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/manifests
-ExecStart=/usr/bin/kubelet \
+Environment=KUBELET_VERSION=${K8S_VER}
+ExecStart=/opt/bin/kubelet \
   --api_servers=http://127.0.0.1:8080 \
   --register-node=false \
   --allow-privileged=true \
