@@ -1,6 +1,6 @@
 # Deploy Kubernetes Master Node(s)
 
-Boot a single CoreOS machine which will be used as the Kubernetes master node. You must use a CoreOS version 773.1.0+ on the Alpha or Beta channel for the `kubelet` to be present in the image.
+Boot a single CoreOS machine which will be used as the Kubernetes master node. You must use a CoreOS version 960.0.0+ for the `kubelet-wrapper` script to be present in the image. If you wish to use an earlier version (e.g. from the 'stable' channel) see [kubelet-wrapper](kubelet-wrapper.md) for more information.
 
 See the [CoreOS Documentation](https://coreos.com/os/docs/latest/) for guides on launching nodes on supported platforms.
 
@@ -95,12 +95,16 @@ Note that the kubelet running on a master node may log repeated attempts to post
 
 * Replace `${ADVERTISE_IP}` with this node's publicly routable IP.
 * Replace `${DNS_SERVICE_IP}`
+* Replace `${K8S_VER}` This will map to: `quay.io/coreos/hyperkube:${K8S_VER}` release
 
 **/etc/systemd/system/kubelet.service**
 
 ```yaml
 [Service]
-ExecStart=/usr/bin/kubelet \
+ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/manifests
+
+Environment=KUBELET_VERSION=${K8S_VER}
+ExecStart=/usr/lib/coreos/kubelet-wrapper \
   --api_servers=http://127.0.0.1:8080 \
   --register-node=false \
   --allow-privileged=true \
@@ -138,7 +142,7 @@ spec:
   hostNetwork: true
   containers:
   - name: kube-apiserver
-    image: gcr.io/google_containers/hyperkube:v1.1.2
+    image: quay.io/coreos/hyperkube:v1.1.7-coreos.1
     command:
     - /hyperkube
     - apiserver
@@ -196,7 +200,7 @@ spec:
   hostNetwork: true
   containers:
   - name: kube-proxy
-    image: gcr.io/google_containers/hyperkube:v1.1.2
+    image: quay.io/coreos/hyperkube:v1.1.7-coreos.1
     command:
     - /hyperkube
     - proxy
@@ -298,7 +302,7 @@ spec:
   hostNetwork: true
   containers:
   - name: kube-controller-manager
-    image: gcr.io/google_containers/hyperkube:v1.1.2
+    image: quay.io/coreos/hyperkube:v1.1.7-coreos.1
     command:
     - /hyperkube
     - controller-manager
@@ -346,7 +350,7 @@ spec:
   hostNetwork: true
   containers:
   - name: kube-scheduler
-    image: gcr.io/google_containers/hyperkube:v1.1.2
+    image: quay.io/coreos/hyperkube:v1.1.7-coreos.1
     command:
     - /hyperkube
     - scheduler
@@ -416,7 +420,7 @@ A successful response should look something like:
 {
   "major": "1",
   "minor": "0",
-  "gitVersion": "v1.1.2",
+  "gitVersion": "v1.1.7-coreos.1",
   "gitCommit": "388061f00f0d9e4d641f9ed4971c775e1654579d",
   "gitTreeState": "clean"
 }
