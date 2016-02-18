@@ -1,6 +1,6 @@
 # Deploy Kubernetes Master Node(s)
 
-Boot a single CoreOS machine which will be used as the Kubernetes master node. You must use a CoreOS version 960.0.0+ for the `kubelet-wrapper` script to be present in the image. If you wish to use an earlier version (e.g. from the 'stable' channel) see [kubelet-wrapper](kubelet-wrapper.md) for more information.
+Boot a single CoreOS machine which will be used as the Kubernetes master node. You must use a CoreOS version 962.0.0+ for the `/usr/lib/coreos/kubelet-wrapper` script to be present in the image. See [kubelet-wrapper](kubelet-wrapper.md) for more information.
 
 See the [CoreOS Documentation](https://coreos.com/os/docs/latest/) for guides on launching nodes on supported platforms.
 
@@ -419,7 +419,7 @@ A successful response should look something like:
 ```
 {
   "major": "1",
-  "minor": "0",
+  "minor": "1",
   "gitVersion": "v1.1.7-coreos.1",
   "gitCommit": "388061f00f0d9e4d641f9ed4971c775e1654579d",
   "gitTreeState": "clean"

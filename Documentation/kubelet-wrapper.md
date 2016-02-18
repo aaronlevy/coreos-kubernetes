@@ -1,8 +1,15 @@
 # Kubelet Wrapper Script
 
-The kubelet has some unique requirements, so we need to be able to run the kubelet in an unconstrained environment. However, we also want to ship the kubelet as a container image to take advantage of all that has to offer (image discovery, signing/verification, management).
+The kubelet is the orchestrator of containers on each host in the Kubernetes cluster — it starts and stops containers, configures pod mounts, and other low-level, essential tasks. In order to accomplish these tasks, the kubelet requires special permissions on the host.
 
-The kubelet-wrapper is a helper-script shipped with CoreOS versions 960.0.0+. The script allows a deployer to easily run the kubelet as a container on the host system.
+CoreOS recommends running the kubelet using the rkt container engine, because it has the correct set of features to enable these special permissions, while taking advantage of all that container packaging has to offer: image discovery, signing/verification, and simplified management.
+
+CoreOS ships a wrapper script, `/usr/lib/coreos/kubelet-wrapper`, which makes it very easy to run the kubelet under rkt. This script accomplishes two things:
+
+1. Future releases of CoreOS can tweak the system-related parameters of the kubelet, such as mounting in /etc/ssl/certs.
+1. Allows user-specified flags and the desired version of the kubelet to be passed to rkt. This gives each cluster admin control to enable newer API features and easily tweak settings, independent of CoreOS releases.
+
+This script is currently shipping in CoreOS 962.0.0+ and will be included in all channels in the near future.
 
 ## Using the kubelet-wrapper
 
@@ -18,7 +25,7 @@ ExecStart=/usr/lib/coreos/kubelet-wrapper \
   --config=/etc/kubernetes/manifests
 ```
 
-In the example above we set the `KUBELET_VERSION` and the kubelet-wrapper script takes care of running the correct container image with all of the required options.
+In the example above we set the `KUBELET_VERSION` and the kubelet-wrapper script takes care of running the correct container image with our desired API server address and manifest location.
 
 ## Manual deployment
 

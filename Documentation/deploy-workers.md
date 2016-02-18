@@ -1,6 +1,6 @@
 # Deploy Kubernetes Worker Node(s)
 
-Boot one or more CoreOS nodes which will be used as Kubernetes Workers. You must use a CoreOS version 960.0.0+ for the `kubelet-wrapper` script to be present in the image. If you wish to use an earlier version (e.g. from the 'stable' channel) see [kubelet-wrapper](kubelet-wrapper.md) for more information.
+Boot one or more CoreOS nodes which will be used as Kubernetes Workers. You must use a CoreOS version 962.0.0+ for the `/usr/lib/coreos/kubelet-wrapper` script to be present in the image. See [kubelet-wrapper](kubelet-wrapper.md) for more information.
 
 See the [CoreOS Documentation](https://coreos.com/os/docs/latest/) for guides on launching nodes on supported platforms.
 
