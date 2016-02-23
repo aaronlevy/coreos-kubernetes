@@ -29,7 +29,7 @@ In the example above we set the `KUBELET_VERSION` and the kubelet-wrapper script
 
 ## Manual deployment
 
-If you wish to use the kubelet-wrapper on a CoreOS version prior to 962.0.0, you can manually place the script on the host.
+If you wish to use the kubelet-wrapper on a CoreOS version prior to 962.0.0, you can manually place the script on the host. Please note that this requires rkt version 0.15.0+.
 
 For example:
 
