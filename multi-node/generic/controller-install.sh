@@ -5,10 +5,10 @@ set -e
 export ETCD_ENDPOINTS=
 
 # Specify the version (vX.Y.Z) of Kubernetes assets to deploy
-export K8S_VER=v1.2.4_coreos.1
+export K8S_VER=v1.3.0-alpha.4_multiapi.1
 
 # Hyperkube image repository to use.
-export HYPERKUBE_IMAGE_REPO=quay.io/coreos/hyperkube
+export HYPERKUBE_IMAGE_REPO=quay.io/peanutbutter/hyperkube
 
 # The CIDR network to use for pod IPs.
 # Each pod launched in the cluster will be assigned an IP out of this range.

@@ -10,10 +10,10 @@ export ETCD_ENDPOINTS=
 export CONTROLLER_ENDPOINT=
 
 # Specify the version (vX.Y.Z) of Kubernetes assets to deploy
-export K8S_VER=v1.2.4_coreos.1
+export K8S_VER=v1.3.0-alpha.4_multiapi.1
 
 # Hyperkube image repository to use.
-export HYPERKUBE_IMAGE_REPO=quay.io/coreos/hyperkube
+export HYPERKUBE_IMAGE_REPO=quay.io/peanutbutter/hyperkube
 
 # The IP address of the cluster DNS service.
 # This must be the same DNS_SERVICE_IP used when configuring the controller nodes.
@@ -127,6 +127,9 @@ clusters:
 - name: local
   cluster:
     certificate-authority: /etc/kubernetes/ssl/ca.pem
+    servers:
+      - https://172.17.4.101
+      - https://172.17.4.102
 users:
 - name: kubelet
   user:
@@ -159,7 +162,6 @@ spec:
     command:
     - /hyperkube
     - proxy
-    - --master=${CONTROLLER_ENDPOINT}
     - --kubeconfig=/etc/kubernetes/worker-kubeconfig.yaml
     - --proxy-mode=iptables
     securityContext:
