@@ -5,10 +5,10 @@ set -e
 export ETCD_ENDPOINTS="http://127.0.0.1:2379"
 
 # Specify the version (vX.Y.Z) of Kubernetes assets to deploy
-export K8S_VER=v1.2.4_coreos.cni.1
+export K8S_VER=v1.3.0-alpha.4.rktnetes
 
 # Hyperkube image repository to use.
-export HYPERKUBE_IMAGE_REPO=quay.io/coreos/hyperkube
+export HYPERKUBE_IMAGE_REPO=quay.io/peanutbutter/hyperkube
 
 # The CIDR network to use for pod IPs.
 # Each pod launched in the cluster will be assigned an IP out of this range.
@@ -91,17 +91,58 @@ ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/manifests
 
 Environment=KUBELET_VERSION=${K8S_VER}
 Environment=KUBELET_ACI=${HYPERKUBE_IMAGE_REPO}
+Environment="RKT_OPTS=--volume=rbin,kind=host,source=/usr/bin/rkt --mount volume=rbin,target=/usr/bin/rkt --volume=rlib,kind=host,source=/var/lib/rkt --mount volume=rlib,target=/var/lib/rkt --volume=stage,kind=host,source=/usr/lib64/rkt/stage1-images/stage1-coreos.aci --mount volume=stage,target=/opt/rkt/stage1-coreos.aci --volume=cni,kind=host,source=/opt/cni --mount=volume=cni,target=/opt/cni"
+
 ExecStartPre=/usr/bin/mkdir -p /etc/kubernetes/manifests
 ExecStart=/usr/lib/coreos/kubelet-wrapper \
   --api-servers=http://127.0.0.1:8080 \
   --network-plugin-dir=/etc/kubernetes/cni/net.d \
   --network-plugin=${K8S_NETWORK_PLUGIN} \
+  --enable-debugging-handlers=true \
+  --container-runtime=rkt \
+  --rkt-path=/usr/bin/rkt \
+  --rkt-stage1-image=/opt/rkt/stage1-coreos.aci \
   --register-node=true \
   --allow-privileged=true \
+  --container-runtime=rkt \
   --config=/etc/kubernetes/manifests \
   --hostname-override=${ADVERTISE_IP} \
   --cluster_dns=${DNS_SERVICE_IP} \
-  --cluster_domain=cluster.local
+  --cluster_domain=cluster.local \
+  --v=10
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    }
+
+    local TEMPLATE=/etc/systemd/system/install-cni.service
+    [ -f $TEMPLATE ] || {
+        echo "TEMPLATE: $TEMPLATE"
+        mkdir -p $(dirname $TEMPLATE)
+        cat << EOF > $TEMPLATE
+[Unit]
+Description=Download cni
+Requires=network-online.target
+After=network-online.target
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStartPre=/usr/bin/mkdir -p /opt/cni
+ExecStartPre=/usr/bin/curl --fail --silent --show-error --location --create-dirs --output /opt/downloads/cni.tar.gz https://storage.googleapis.com/kubernetes-release/network-plugins/cni-42c4cb842dad606a84e93aad5a4484ded48e3046.tar.gz
+ExecStart=/usr/bin/tar xf /opt/downloads/cni.tar.gz -C /opt/cni/
+EOF
+    }
+
+    local TEMPLATE=/etc/systemd/system/rkt-api.service
+    [ -f $TEMPLATE ] || {
+        echo "TEMPLATE: $TEMPLATE"
+        mkdir -p $(dirname $TEMPLATE)
+        cat << EOF > $TEMPLATE
+[Service]
+ExecStart=/usr/bin/rkt api-service
 Restart=always
 RestartSec=10
 
@@ -831,6 +872,8 @@ systemctl stop update-engine; systemctl mask update-engine
 
 systemctl daemon-reload
 systemctl enable flanneld; systemctl start flanneld
+systemctl start install-cni
+systemctl enable rkt-api; systemctl start rkt-api
 systemctl enable kubelet; systemctl start kubelet
 
 if [ $USE_CALICO = "true" ]; then
