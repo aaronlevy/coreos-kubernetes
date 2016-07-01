@@ -13,6 +13,8 @@ coreos:
             [Unit]
             Requires=flanneld.service
             After=flanneld.service
+            [Service]
+            Environment="DOCKER_CGROUPS="
 
     - name: kubelet.service
       enable: true
@@ -28,6 +30,10 @@ coreos:
         Environment="RKT_OPTS=--volume dns,kind=host,source=/etc/resolv.conf --mount volume=dns,target=/etc/resolv.conf"
         ExecStart=/usr/lib/coreos/kubelet-wrapper \
         --api-servers={{.SecureAPIServers}} \
+{{ if .UseCalico }}
+        --network-plugin-dir=/etc/kubernetes/cni/net.d \
+        --network-plugin={{.K8sNetworkPlugin}} \
+{{ end}}
         --register-node=true \
         --allow-privileged=true \
         --config=/etc/kubernetes/manifests \
