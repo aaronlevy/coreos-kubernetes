@@ -14,13 +14,6 @@ coreos:
             Requires=flanneld.service
             After=flanneld.service
 
-    - name: early-docker.service
-      drop-ins:
-        - name: 40-cgroup.conf
-          content: |
-            [Service]
-            Environment="DOCKER_CGROUPS="
-
     - name: kubelet.service
       enable: true
       command: start
